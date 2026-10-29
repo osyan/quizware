@@ -30,7 +30,7 @@ if not exist "node_modules" (
 )
 
 echo.
-echo QuizWare is starting. Open http://localhost:4000 in your browser.
+echo QuizWare is starting. Open http://localhost:6743 in your browser.
 echo Press Ctrl+C to stop the server.
 echo.
 call npm start

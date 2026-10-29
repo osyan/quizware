@@ -20,7 +20,7 @@ PrivateTmp=true
 PrivateDevices=true
 
 Environment=NODE_ENV=production
-Environment=PORT=4000
+Environment=PORT=6743
 Environment=BIND=0.0.0.0
 # Set to 1 when behind Nginx/Cloudflare so rate limits see real client IPs:
 # Environment=TRUST_PROXY=1

@@ -14,7 +14,7 @@ LABEL org.opencontainers.image.title="QuizWare" \
       org.opencontainers.image.licenses="MIT"
 
 ENV NODE_ENV=production \
-    PORT=4000 \
+    PORT=6743 \
     BIND=0.0.0.0
 
 WORKDIR /app
@@ -26,9 +26,9 @@ RUN addgroup -S quizware && adduser -S -G quizware quizware \
  && chown -R quizware:quizware /app
 USER quizware
 
-EXPOSE 4000
+EXPOSE 6743
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||4000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||6743)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "server.js"]

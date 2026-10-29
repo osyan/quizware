@@ -7,9 +7,9 @@ services:
     container_name: quizware
     init: true
     ports:
-      - "${QUIZWARE_PORT:-4000}:4000"
+      - "${QUIZWARE_PORT:-6743}:6743"
     environment:
-      PORT: "4000"
+      PORT: "6743"
       NODE_ENV: production
       # Public demo guards. Raise/ignore for a single school event.
       MAX_SESSIONS: "${MAX_SESSIONS:-500}"
@@ -27,7 +27,7 @@ services:
         - CMD
         - node
         - -e
-        - "fetch('http://127.0.0.1:4000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        - "fetch('http://127.0.0.1:6743/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
       interval: 30s
       timeout: 5s
       retries: 3

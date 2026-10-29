@@ -37,7 +37,7 @@ There is no `beep.mp3`: the host page synthesises the buzz beep with the Web Aud
 app has no binary assets and works offline.
 
 Every URL inside the pages is relative (`api/session`, `socket.io/socket.io.js`,
-`player.html?...`), which is what lets the same build run at `localhost:4000/` and behind the
+`player.html?...`), which is what lets the same build run at `localhost:6743/` and behind the
 `/quizware/` Nginx prefix.
 
 ## 4. Core Workflow
@@ -185,7 +185,7 @@ location = /quizware {
 }
 
 location /quizware/ {
-    proxy_pass http://127.0.0.1:4000/;
+    proxy_pass http://127.0.0.1:6743/;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
@@ -212,7 +212,7 @@ Three options, all detailed in `SELFHOST.md`:
 
 - **Docker / Compose** (recommended): `Dockerfile` (Node 22 Alpine, non-root user, healthcheck on
   `/api/health`, production-only deps) plus `docker-compose.yml` (restart policy, read-only
-  rootfs, `no-new-privileges`, port `4000`).
+  rootfs, `no-new-privileges`, port `6743`).
 - **Bare metal**: `deploy/quizware.service` (systemd, hardened with `ProtectSystem=strict`) and
   `npm ci --omit=dev`.
 - **Path prefix** `/quizware/`: `deploy/nginx-prefix.conf`; full domain: `deploy/nginx-quizware.syss.hk.conf`.
@@ -221,7 +221,7 @@ Runtime configuration:
 
 | Env var | Default | Meaning |
 |---|---|---|
-| `PORT` | `4000` | Listen port |
+| `PORT` | `6743` | Listen port |
 | `BIND` | `0.0.0.0` | Listen address |
 | `MAX_SESSIONS` | `500` | Max live rooms (503 beyond) |
 | `CREATE_LIMIT` | `20` | Rooms per IP per 10 minutes (429 beyond) |
@@ -244,7 +244,7 @@ ExecStart=/usr/bin/npm start
 Restart=always
 User=<user>
 Environment=NODE_ENV=production
-Environment=PORT=4000
+Environment=PORT=6743
 
 [Install]
 WantedBy=multi-user.target

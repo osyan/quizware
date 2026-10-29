@@ -16,7 +16,7 @@ No app install, no dedicated hardware, no database.
 ## Run with Docker
 
 ```bash
-docker run -d --name quizware -p 4000:4000 --restart unless-stopped \
+docker run -d --name quizware -p 6743:6743 --restart unless-stopped \
   ghcr.io/osyan/quizware:latest
 ```
 
@@ -28,7 +28,7 @@ cd quizware
 docker compose up -d --build
 ```
 
-Then open <http://localhost:4000>. Full hosting options — Nginx/Cloudflare, LAN-only classroom
+Then open <http://localhost:6743>. Full hosting options — Nginx/Cloudflare, LAN-only classroom
 mode, Raspberry Pi, systemd, env vars, troubleshooting — are in **[SELFHOST.md](SELFHOST.md)**.
 
 ## Quick start (local, without Docker)
@@ -43,7 +43,7 @@ npm start
 On Windows you can also just double-click `start.cmd`, which uses the portable Node.js copy in
 `%USERPROFILE%\tools\node` if it exists, installs dependencies on first run, and starts the server.
 
-Then open <http://localhost:4000>:
+Then open <http://localhost:6743>:
 
 1. **Create a room** → set title + teams → *Create room & open host screen*.
 2. The host screen opens with a host key in the URL. Put it on the projector (⛶ for fullscreen).
@@ -52,7 +52,7 @@ Then open <http://localhost:4000>:
 5. Host scores with `A`/`S`/`D` (+10/+20/+30), `Z`/`X`/`C` (−10/−20/−30), `Enter` to reset.
 
 Other devices on the same Wi-Fi can join too — use the machine's LAN IP, e.g.
-`http://192.168.1.20:4000/config.html`.
+`http://192.168.1.20:6743/config.html`.
 
 ## Pages
 
@@ -108,7 +108,7 @@ quizware/
 ```
 
 `public/` is the web root, so every URL in the pages is relative — the app works both at
-`http://localhost:4000/` and behind the `/quizware/` Nginx prefix.
+`http://localhost:6743/` and behind the `/quizware/` Nginx prefix.
 
 ## HTTP / socket API
 
@@ -153,7 +153,7 @@ and keep Cloudflare WebSockets enabled.
 
 ```bash
 docker ps -a && docker logs --tail 50 quizware
-curl -sS http://127.0.0.1:4000/api/health
+curl -sS http://127.0.0.1:6743/api/health
 # bare metal instead:
 systemctl status quizware --no-pager -l
 journalctl -u quizware -n 50 --no-pager

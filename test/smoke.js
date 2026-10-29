@@ -12,7 +12,7 @@
 const assert = require('node:assert/strict');
 const { io } = require('socket.io-client');
 
-const BASE = process.env.BASE_URL || 'http://127.0.0.1:4000';
+const BASE = process.env.BASE_URL || 'http://127.0.0.1:6743';
 const openSockets = [];
 let checks = 0;
 

@@ -72,19 +72,19 @@ sudo docker compose up -d --build
 ```bash
 sudo docker ps -a
 sudo docker compose -f /opt/quizware/docker-compose.yml logs --tail 50
-ss -ltnp | grep 4000
+ss -ltnp | grep 6743
 ```
 
-The old config pointed at `192.168.88.123:4000`; the current vhost targets `127.0.0.1:4000`.
+The old config pointed at `192.168.88.123:6743`; the current vhost targets `127.0.0.1:6743`.
 
 ## Docker one-liner
 
 ```bash
-docker run -d --name quizware -p 4000:4000 --restart unless-stopped \
+docker run -d --name quizware -p 6743:6743 --restart unless-stopped \
   ghcr.io/osyan/quizware:latest
 ```
 
-Open <http://localhost:4000> (or `http://<server-ip>:4000`).
+Open <http://localhost:6743> (or `http://<server-ip>:6743`).
 
 The image is published to GitHub Container Registry when a `v*` tag is pushed (see
 `.github/workflows/publish.yml`). GHCR packages are **private by default** — after the first
@@ -117,15 +117,15 @@ Build the image yourself instead of pulling:
 
 ```bash
 docker build -t quizware:local .
-docker run -d -p 4000:4000 --restart unless-stopped quizware:local
+docker run -d -p 6743:6743 --restart unless-stopped quizware:local
 ```
 
 ## Behind Nginx / Cloudflare (e.g. quizware.syss.hk)
 
-1. **Run the container** on the origin server (port 4000, bound to localhost is enough):
+1. **Run the container** on the origin server (port 6743, bound to localhost is enough):
 
    ```bash
-   docker run -d --name quizware -p 127.0.0.1:4000:4000 --restart unless-stopped \
+   docker run -d --name quizware -p 127.0.0.1:6743:6743 --restart unless-stopped \
      -e TRUST_PROXY=1 ghcr.io/osyan/quizware:latest
    ```
 
@@ -158,9 +158,9 @@ Best for classrooms and venues with poor Wi-Fi:
 
 1. Start QuizWare on the laptop connected to the projector (Docker or `npm start`).
 2. Find the laptop's LAN IP, e.g. `192.168.1.20`.
-3. Open `http://192.168.1.20:4000/config.html` **on that IP** (not `localhost`), so the QR codes
+3. Open `http://192.168.1.20:6743/config.html` **on that IP** (not `localhost`), so the QR codes
    point at the LAN address phones can reach.
-4. Allow inbound TCP 4000 in the OS firewall (macOS/Windows will prompt on first run).
+4. Allow inbound TCP 6743 in the OS firewall (macOS/Windows will prompt on first run).
 5. Players join the same Wi-Fi and scan.
 
 Notes:
@@ -189,7 +189,7 @@ Logs: `journalctl -u quizware -f`.
 
 | Env var | Default | Meaning |
 |---|---|---|
-| `PORT` | `4000` | Listen port |
+| `PORT` | `6743` | Listen port |
 | `BIND` | `0.0.0.0` | Listen address (`127.0.0.1` behind a proxy) |
 | `MAX_SESSIONS` | `500` | Max live rooms; new rooms get HTTP 503 beyond this |
 | `CREATE_LIMIT` | `20` | Rooms one IP may create per 10 minutes (HTTP 429) |
@@ -212,9 +212,9 @@ Rooms themselves expire 24 hours after creation (and immediately on restart).
 
 | Symptom | Cause / fix |
 |---|---|
-| `502 Bad Gateway` from Nginx/Cloudflare | Container not running: `docker ps`, `docker logs quizware`, `curl -sS http://127.0.0.1:4000/api/health` |
+| `502 Bad Gateway` from Nginx/Cloudflare | Container not running: `docker ps`, `docker logs quizware`, `curl -sS http://127.0.0.1:6743/api/health` |
 | Buzz feels slow / "live" flickers | WebSocket blocked by a proxy. Add the `Upgrade`/`Connection` headers from the Nginx example (Socket.IO silently falls back to polling) |
-| Phones cannot open the LAN URL | AP/client isolation on the Wi-Fi, or firewall blocking port 4000 |
+| Phones cannot open the LAN URL | AP/client isolation on the Wi-Fi, or firewall blocking port 6743 |
 | QR code points to `localhost` | You opened the config page via `localhost` on a LAN event — reopen it using the LAN IP |
 | `429 rate-limited` while testing | Room-creation limit; wait 10 minutes or raise `CREATE_LIMIT` |
 | Everything resets after deploy | Expected: sessions live in RAM |

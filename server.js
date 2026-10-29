@@ -6,7 +6,7 @@
  * - Socket.IO room-based real-time buzz + score state
  * - In-memory sessions (TTL 24h), no database
  *
- * Works both at http://localhost:4000/ and behind a reverse proxy prefix
+ * Works both at http://localhost:6743/ and behind a reverse proxy prefix
  * such as https://quizware.syss.hk/quizware/ because every frontend URL
  * is relative to the page.
  */
@@ -18,7 +18,7 @@ const express = require('express');
 const QRCode = require('qrcode');
 const { Server } = require('socket.io');
 
-const PORT = Number(process.env.PORT || 4000);
+const PORT = Number(process.env.PORT || 6743);
 const BIND = process.env.BIND || '0.0.0.0';
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000;

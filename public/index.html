@@ -148,7 +148,7 @@
 
     <div class="code">
       <button class="copy" data-copy="dockerCmd" type="button">Copy</button>
-      <pre><code id="dockerCmd">docker run -d --name quizware -p 4000:4000 \
+      <pre><code id="dockerCmd">docker run -d --name quizware -p 6743:6743 \
   --restart unless-stopped \
   ghcr.io/osyan/quizware:latest</code></pre>
     </div>
@@ -162,7 +162,7 @@ docker compose up -d --build</code></pre>
     </div>
 
     <p class="alt">
-      Without Docker: <code>npm ci --omit=dev &amp;&amp; npm start</code> (Node 18+), then open port 4000.
+      Without Docker: <code>npm ci --omit=dev &amp;&amp; npm start</code> (Node 18+), then open port 6743.
     </p>
 
     <div class="row">
@@ -218,7 +218,7 @@ const IMAGE = 'ghcr.io/osyan/quizware:latest';
   const dockerCmd = document.getElementById('dockerCmd');
   if (dockerCmd) {
     dockerCmd.textContent =
-      'docker run -d --name quizware -p 4000:4000 \\\n' +
+      'docker run -d --name quizware -p 6743:6743 \\\n' +
       '  --restart unless-stopped \\\n  ' + IMAGE;
   }
   const cloneCmd = document.getElementById('cloneCmd');

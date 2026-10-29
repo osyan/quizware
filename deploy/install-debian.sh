@@ -5,7 +5,7 @@
 # waits for the health check and (optionally) installs the Nginx vhost.
 #
 # Usage:
-#   sudo bash deploy/install-debian.sh                      # plain install on port 4000
+#   sudo bash deploy/install-debian.sh                      # plain install on port 6743
 #   sudo bash deploy/install-debian.sh --domain quizware.syss.hk
 #   sudo bash deploy/install-debian.sh --port 8080 --image ghcr.io/osyan/quizware:latest
 #
@@ -14,7 +14,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 DOMAIN=""
-PORT="4000"
+PORT="6743"
 IMAGE=""          # when set, pull the prebuilt image instead of building
 SERVICE_NAME="quizware"
 
@@ -43,7 +43,7 @@ if [[ -n "$IMAGE" ]]; then
   docker pull "$IMAGE"
   docker rm -f "$SERVICE_NAME" 2>/dev/null || true
   docker run -d --name "$SERVICE_NAME" \
-    -p "127.0.0.1:${PORT}:4000" \
+    -p "127.0.0.1:${PORT}:6743" \
     --restart unless-stopped \
     -e TRUST_PROXY="${TRUST_PROXY:-1}" \
     "$IMAGE"
@@ -51,7 +51,7 @@ else
   docker rm -f "$SERVICE_NAME" 2>/dev/null || true
   docker compose up -d --build
   # Publish on localhost only; Nginx fronts it.
-  if ! docker port "$SERVICE_NAME" "4000" >/dev/null 2>&1; then
+  if ! docker port "$SERVICE_NAME" "6743" >/dev/null 2>&1; then
     echo "   (compose published on 0.0.0.0; fine for LAN mode)"
   fi
 fi
