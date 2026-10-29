@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizWare Host</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; }
+  body { font-family:-apple-system,"Segoe UI",Arial,sans-serif; background:#0f1626; color:#f3f6ff; overflow-x:hidden; }
+  .shell { min-height:100%; display:flex; flex-direction:column; }
+
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; background:#131c2f; border-bottom:1px solid #22304d; flex-wrap:wrap; }
+  .left { display:flex; align-items:baseline; gap:14px; min-width:0; }
+  .quiz-title { font-size:19px; font-weight:800; letter-spacing:-.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:46vw; }
+  .room { font-size:13px; color:#8fa2c6; white-space:nowrap; }
+  .room b { color:#fff; letter-spacing:2px; font-size:15px; }
+  .toolbar { display:flex; gap:8px; align-items:center; }
+  .icon-btn { height:40px; min-width:40px; padding:0 12px; border-radius:12px; border:1px solid #2b3b5c; background:#1b263e; color:#e8eeff; font-size:15px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
+  .icon-btn:hover { background:#233252; }
+  .icon-btn.on { background:#3b6cf6; border-color:#3b6cf6; }
+  .status { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#8fa2c6; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#3ddc84; box-shadow:0 0 10px #3ddc84; }
+  .dot.off { background:#ff6b6b; box-shadow:0 0 10px #ff6b6b; }
+
+  .main { flex:1; display:flex; flex-direction:column; justify-content:center; padding:14px 16px 20px; gap:14px; }
+
+  .banner { display:none; align-items:center; justify-content:space-between; gap:16px; padding:18px 24px; border-radius:20px; box-shadow:0 16px 40px rgba(0,0,0,.35); animation:pop .18s ease-out; }
+  .banner.show { display:flex; }
+  @keyframes pop { from { transform:scale(.96); opacity:.4 } to { transform:scale(1); opacity:1 } }
+  .banner .who { font-size:clamp(24px,4.4vw,54px); font-weight:900; letter-spacing:-1px; text-shadow:0 2px 10px rgba(0,0,0,.25); }
+  .banner .meta { text-align:right; }
+  .banner .time { font-size:clamp(22px,3.6vw,44px); font-weight:800; font-variant-numeric:tabular-nums; }
+  .banner .label { font-size:12px; text-transform:uppercase; letter-spacing:2px; opacity:.8; }
+  .banner .from { font-size:12px; opacity:.85; }
+
+  .team-boxes { display:grid; gap:14px; }
+  .team-box { position:relative; border-radius:22px; padding:18px 16px; text-align:center; color:#101828; min-height:140px; display:flex; flex-direction:column; justify-content:center; gap:6px; border:1px solid rgba(0,0,0,.12); box-shadow:0 12px 30px rgba(0,0,0,.28); cursor:pointer; transition:transform .12s ease, outline-color .12s; outline:3px solid transparent; }
+  .team-box:hover { transform:translateY(-2px); }
+  .team-box.winner { outline-color:#fff; transform:scale(1.02); }
+  .team-name { font-size:clamp(15px,1.7vw,22px); font-weight:800; line-height:1.15; word-break:break-word; }
+  .score { font-size:clamp(40px,6.2vw,84px); font-weight:900; font-variant-numeric:tabular-nums; line-height:1; letter-spacing:-2px; }
+  .count { position:absolute; top:10px; right:12px; font-size:11px; font-weight:700; background:rgba(255,255,255,.65); border-radius:999px; padding:3px 8px; color:#243052; }
+  .hint { text-align:center; font-size:12px; color:#7d8db0; }
+  .hint kbd { background:#1b263e; border:1px solid #2b3b5c; border-bottom-width:2px; border-radius:6px; padding:1px 6px; color:#dbe4f8; font-family:inherit; font-size:11px; }
+
+  .overlay { position:fixed; inset:0; background:#0c1322; z-index:50; display:none; flex-direction:column; padding:18px; }
+  .overlay.show { display:flex; }
+  .overlay-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+  .overlay-head h2 { margin:0; font-size:20px; }
+  .qr-grid { flex:1; display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); align-content:center; overflow:auto; }
+  .qr-card { background:#fff; color:#101828; border-radius:18px; padding:12px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .qr-card .name { font-weight:800; font-size:16px; text-align:center; }
+  .qr-card img { width:min(190px,42vw); height:auto; image-rendering:pixelated; }
+  .qr-card .url { font-size:10px; color:#65718c; word-break:break-all; text-align:center; }
+
+  .fatal { position:fixed; inset:0; background:#0c1322; z-index:99; display:none; place-items:center; padding:24px; text-align:center; }
+  .fatal.show { display:grid; }
+  .fatal h2 { font-size:22px; margin:0 0 10px; }
+  .fatal p { color:#9fb0d0; line-height:1.6; margin:0 0 20px; }
+  .fatal a { color:#8fb0ff; }
+
+  @media (max-width: 720px) {
+    .quiz-title { max-width:60vw; }
+    .team-boxes { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div class="left">
+      <div class="quiz-title" id="quizTitle">QuizWare</div>
+      <div class="room">Room <b id="roomCode">------</b></div>
+      <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">connecting</span></div>
+    </div>
+    <div class="toolbar">
+      <button class="icon-btn" id="qrBtn" title="Show team QR codes">▦ QR</button>
+      <button class="icon-btn" id="muteBtn" title="Lock / unlock player buzzing">🔓 Buzz open</button>
+      <button class="icon-btn" id="resetBtn" title="Clear the buzz (Enter)">↻ Reset</button>
+      <button class="icon-btn" id="fsBtn" title="Fullscreen">⛶</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="banner" id="banner">
+      <div>
+        <div class="label">Buzzed first</div>
+        <div class="who" id="bannerTeam">—</div>
+      </div>
+      <div class="meta">
+        <div class="label">Decision time</div>
+        <div class="time" id="bannerTime">0.00s</div>
+        <div class="from" id="bannerFrom"></div>
+      </div>
+    </div>
+
+    <div class="team-boxes" id="teamBoxes"></div>
+
+    <div class="hint" id="hint">
+      Tap a team to award the buzz · <kbd>A</kbd>+10 <kbd>S</kbd>+20 <kbd>D</kbd>+30 · <kbd>Z</kbd>−10 <kbd>X</kbd>−20 <kbd>C</kbd>−30 · <kbd>Enter</kbd> reset
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="qrOverlay">
+  <div class="overlay-head">
+    <h2>Scan to join — pick your team</h2>
+    <button class="icon-btn" id="closeQrBtn">Close ✕</button>
+  </div>
+  <div class="qr-grid" id="qrGrid"></div>
+</div>
+
+<div class="fatal" id="fatal">
+  <div>
+    <h2>Host screen not connected</h2>
+    <p id="fatalText">This link is missing its host key or the room has expired.</p>
+    <a href="config.html">Create a new room →</a>
+  </div>
+</div>
+
+<script src="socket.io/socket.io.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const sessionId = (params.get('session') || '').trim().toUpperCase();
+const hostKey = params.get('key') || '';
+
+const socket = io();
+const teamBoxesEl = document.getElementById('teamBoxes');
+const bannerEl = document.getElementById('banner');
+const bannerTeamEl = document.getElementById('bannerTeam');
+const bannerTimeEl = document.getElementById('bannerTime');
+const bannerFromEl = document.getElementById('bannerFrom');
+const qrOverlay = document.getElementById('qrOverlay');
+const qrGrid = document.getElementById('qrGrid');
+const muteBtn = document.getElementById('muteBtn');
+const fatalEl = document.getElementById('fatal');
+
+const PAGE_BASE = location.origin + location.pathname.replace(/[^/]*$/, '');
+
+let state = null;
+let clockOffset = 0;
+let lastWinnerSeq = 0;
+let boxes = new Map();
+let timerHandle = null;
+let audioCtx = null;
+
+/* ---------- audio: short beep, no asset file needed ---------- */
+function unlockAudio() {
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    audioCtx = new Ctx();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+}
+
+function beep() {
+  unlockAudio();
+  if (!audioCtx || audioCtx.state === 'suspended') return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(880, now);
+  osc.frequency.setValueAtTime(1320, now + 0.09);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.28, now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.26);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + 0.3);
+}
+
+document.addEventListener('pointerdown', unlockAudio, { once: true });
+document.addEventListener('keydown', unlockAudio, { once: true });
+
+/* ---------- rendering ---------- */
+function columnsFor(count) {
+  if (count <= 4) return count;
+  return 4;
+}
+
+function buildTeamBox(team) {
+  const box = document.createElement('div');
+  box.className = 'team-box';
+  box.dataset.teamId = team.id;
+  box.innerHTML = `
+    <div class="count" data-count></div>
+    <div class="team-name" data-name></div>
+    <div class="score" data-score>0</div>
+  `;
+  box.addEventListener('click', () => socket.emit('forceBuzz', { teamId: team.id }));
+  return box;
+}
+
+function renderTeams() {
+  const teams = state.teams;
+  teamBoxesEl.style.gridTemplateColumns = `repeat(${columnsFor(teams.length)}, minmax(0, 1fr))`;
+
+  const ids = teams.map((team) => team.id).join(',');
+  if (teamBoxesEl.dataset.ids !== ids) {
+    teamBoxesEl.innerHTML = '';
+    boxes = new Map();
+    teams.forEach((team) => {
+      const box = buildTeamBox(team);
+      teamBoxesEl.appendChild(box);
+      boxes.set(team.id, box);
+    });
+    teamBoxesEl.dataset.ids = ids;
+  }
+
+  const winnerId = state.currentWinner?.teamId;
+  teams.forEach((team) => {
+    const box = boxes.get(team.id);
+    if (!box) return;
+    box.style.backgroundColor = team.color;
+    box.querySelector('[data-name]').textContent = team.name;
+    box.querySelector('[data-score]').textContent = state.scores[team.id] ?? 0;
+    const players = state.playersByTeam?.[team.id] ?? 0;
+    const countEl = box.querySelector('[data-count]');
+    countEl.textContent = `${players} 👤`;
+    countEl.style.display = players > 0 ? 'inline-block' : 'none';
+    box.classList.toggle('winner', team.id === winnerId);
+  });
+}
+
+function renderBanner() {
+  const winner = state.currentWinner;
+  if (!winner) {
+    bannerEl.classList.remove('show');
+    stopTimer();
+    return;
+  }
+  bannerEl.classList.add('show');
+  bannerTeamEl.textContent = winner.teamName;
+  bannerEl.style.backgroundColor = winner.teamColor;
+  bannerEl.style.color = '#101828';
+  bannerFromEl.textContent = winner.source === 'host' ? 'awarded by host' : 'player buzz';
+  startTimer(winner.ts);
+}
+
+function renderMute() {
+  const muted = state.buzzMuted;
+  muteBtn.classList.toggle('on', muted);
+  muteBtn.textContent = muted ? '🔒 Buzz locked' : '🔓 Buzz open';
+  muteBtn.title = muted ? 'Player buzz is locked (compulsory question)' : 'Player buzz is open';
+}
+
+function renderHeader() {
+  document.title = state.currentWinner ? `${state.currentWinner.teamName} buzzed · ${state.id}` : `${state.title} · ${state.id}`;
+  document.getElementById('quizTitle').textContent = state.title;
+  document.getElementById('roomCode').textContent = state.id;
+}
+
+function render() {
+  if (!state) return;
+  renderHeader();
+  renderTeams();
+  renderBanner();
+  renderMute();
+}
+
+/* ---------- timer ---------- */
+function startTimer(startTs) {
+  stopTimer();
+  const tick = () => {
+    const elapsed = Date.now() + clockOffset - startTs;
+    bannerTimeEl.textContent = `${(Math.max(0, elapsed) / 1000).toFixed(2)}s`;
+  };
+  tick();
+  timerHandle = setInterval(tick, 60);
+}
+
+function stopTimer() {
+  if (timerHandle) clearInterval(timerHandle);
+  timerHandle = null;
+  bannerTimeEl.textContent = '—';
+}
+
+/* ---------- QR overlay ---------- */
+function renderQrs() {
+  if (!state) return;
+  qrGrid.innerHTML = '';
+  state.teams.forEach((team) => {
+    const url = `${PAGE_BASE}player.html?session=${encodeURIComponent(state.id)}&teamId=${encodeURIComponent(team.id)}`;
+    const card = document.createElement('div');
+    card.className = 'qr-card';
+    card.innerHTML = `
+      <div class="name"></div>
+      <img alt="QR code for ${team.name}">
+      <div class="url"></div>
+    `;
+    card.querySelector('.name').textContent = team.name;
+    card.querySelector('img').src = `api/qr?text=${encodeURIComponent(url)}`;
+    card.querySelector('.url').textContent = url;
+    qrGrid.appendChild(card);
+  });
+}
+
+function toggleQr(force) {
+  const show = typeof force === 'boolean' ? force : !qrOverlay.classList.contains('show');
+  if (show) renderQrs();
+  qrOverlay.classList.toggle('show', show);
+  document.getElementById('qrBtn').classList.toggle('on', show);
+}
+
+/* ---------- socket ---------- */
+socket.on('connect', () => {
+  document.getElementById('statusDot').classList.remove('off');
+  document.getElementById('statusText').textContent = 'live';
+  socket.emit('join', { role: 'host', sessionId, key: hostKey }, (result) => {
+    if (!result?.ok) showFatal(result?.reason === 'bad-host-key'
+      ? 'The host key in this link is wrong. Open the link from the setup page.'
+      : `Room ${sessionId || '(none)'} was not found. It may have expired after 24 hours.`);
+  });
+});
+
+socket.on('disconnect', () => {
+  document.getElementById('statusDot').classList.add('off');
+  document.getElementById('statusText').textContent = 'reconnecting';
+});
+
+socket.on('sessionState', (data) => {
+  clockOffset = data.serverTime - Date.now();
+  state = data;
+  render();
+});
+
+socket.on('winner', (data) => {
+  if (data.seq > lastWinnerSeq) {
+    lastWinnerSeq = data.seq;
+    if (data.source === 'player') beep();
+  }
+  renderBanner();
+});
+
+socket.on('reset', () => renderBanner());
+socket.on('errorMessage', (data) => showFatal(data?.text || 'Error'));
+
+function showFatal(text) {
+  document.getElementById('fatalText').textContent = text;
+  fatalEl.classList.add('show');
+}
+
+/* ---------- controls ---------- */
+document.getElementById('resetBtn').addEventListener('click', () => socket.emit('resetBuzz'));
+document.getElementById('muteBtn').addEventListener('click', () => socket.emit('toggleBuzzMute', { muted: !state?.buzzMuted }));
+document.getElementById('qrBtn').addEventListener('click', () => toggleQr());
+document.getElementById('closeQrBtn').addEventListener('click', () => toggleQr(false));
+document.getElementById('fsBtn').addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else document.documentElement.requestFullscreen?.().catch(() => {});
+});
+
+const ADD_KEYS = { A: 10, S: 20, D: 30 };
+const SUB_KEYS = { Z: -10, X: -20, C: -30 };
+
+document.addEventListener('keydown', (event) => {
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  const key = event.key.toUpperCase();
+  if (key === 'ENTER') {
+    event.preventDefault();
+    socket.emit('resetBuzz');
+    return;
+  }
+  if (!state?.currentWinner) return;
+  const delta = ADD_KEYS[key] ?? SUB_KEYS[key];
+  if (delta === undefined) return;
+  event.preventDefault();
+  socket.emit('changeScore', { teamId: state.currentWinner.teamId, amount: delta });
+});
+
+if (matchMedia('(pointer: coarse)').matches) document.getElementById('hint').style.display = 'none';
+</script>
+</body>
+</html>

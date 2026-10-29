@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizWare — set up a room</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI",Arial,sans-serif; background:#f4f6fb; color:#16203a; }
+  .wrap { max-width: 760px; margin:0 auto; padding:26px 18px 60px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+  h1 { font-size:24px; margin:0; }
+  .back { color:#3b6cf6; text-decoration:none; font-size:14px; }
+  .card { background:#fff; border:1px solid #e2e7f2; border-radius:18px; padding:20px; box-shadow:0 10px 26px rgba(20,35,80,.06); margin-bottom:16px; }
+  label { display:block; font-size:13px; font-weight:700; color:#41506f; margin-bottom:6px; }
+  input[type=text], input[type=number] { width:100%; padding:12px 14px; border-radius:12px; border:1px solid #d3dbeb; font-size:16px; background:#fff; }
+  input[type=text]:focus { outline:2px solid #b9c9ff; border-color:#3b6cf6; }
+  .row { display:flex; gap:12px; }
+  .row > * { flex:1; min-width:0; }
+  .team-row { display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+  .team-row .num { width:24px; text-align:center; color:#8b97b2; font-size:13px; font-weight:700; }
+  .team-row input[type=text] { flex:1; }
+  .team-row input[type=color] { width:44px; height:44px; padding:0; border:1px solid #d3dbeb; border-radius:10px; background:#fff; cursor:pointer; flex:none; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; padding:15px 22px; border-radius:14px; border:none; background:#3b6cf6; color:#fff; font-size:16px; font-weight:700; cursor:pointer; text-decoration:none; width:100%; }
+  .btn.ghost { background:#fff; color:#2c3a5c; border:1px solid #d3dbeb; }
+  .btn:disabled { opacity:.6; cursor:default; }
+  .muted { color:#71809f; font-size:13px; line-height:1.6; }
+  #result { display:none; }
+  .code { font-size:44px; font-weight:800; letter-spacing:6px; text-align:center; margin:6px 0 4px; }
+  .qr { display:block; margin:14px auto 4px; width:220px; max-width:100%; border-radius:12px; }
+  .links { display:grid; gap:10px; margin-top:14px; }
+  .warn { background:#fff6e6; border:1px solid #ffd79a; color:#8a5b00; border-radius:12px; padding:10px 12px; font-size:13px; line-height:1.55; }
+  hr { border:none; border-top:1px solid #eef1f8; margin:16px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Set up a room</h1>
+    <a class="back" href="index.html">← Home</a>
+  </header>
+
+  <form id="setup" class="card">
+    <label for="title">Quiz title</label>
+    <input type="text" id="title" maxlength="60" placeholder="F.3 Science Quiz 2026" autocomplete="off">
+
+    <div style="height:14px"></div>
+
+    <div class="row">
+      <div>
+        <label for="teamCount">Number of teams</label>
+        <input type="number" id="teamCount" min="2" max="12" value="4">
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button type="button" class="btn ghost" id="resetTeams">Reset names</button>
+      </div>
+    </div>
+
+    <div style="height:14px"></div>
+    <label>Teams</label>
+    <div id="teamRows"></div>
+
+    <hr>
+    <button class="btn" id="createBtn" type="submit">Create room &amp; open host screen →</button>
+    <p class="muted" style="margin:12px 0 0">The host screen is the only place that can award points or reset the buzz. Keep its link private.</p>
+  </form>
+
+  <div id="result" class="card">
+    <h2 style="margin:0 0 4px;font-size:19px">Room created</h2>
+    <div class="muted" id="resultTitle"></div>
+    <div class="code" id="roomCode">------</div>
+    <div class="muted" style="text-align:center">Players can scan a team QR code on the host screen, or enter this code.</div>
+    <img id="hostQr" class="qr" alt="QR code for the host screen">
+    <div class="links">
+      <a class="btn" id="openHost" href="#">Open host screen →</a>
+    </div>
+    <div style="height:14px"></div>
+    <div class="warn">Keep this host link (it contains the host key). Anyone with it can control scores. Player QR codes do not include it.</div>
+    <p class="muted" id="hostLinkText" style="word-break:break-all;margin:12px 0 0"></p>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#ff9999','#99ccff','#ffe680','#b3e6b3','#d9b3ff','#ffc299','#80d4d4','#f2a2c0','#c9d6a3','#a3b8f0','#f0c9a3','#b0b0b0'];
+const STORAGE_KEY = 'qw:lastSetup';
+const teamRows = document.getElementById('teamRows');
+const teamCountEl = document.getElementById('teamCount');
+
+function currentNames() {
+  return [...teamRows.querySelectorAll('input[type=text]')].map((input) => input.value);
+}
+
+function renderRows(count, names = []) {
+  const existing = currentNames();
+  teamRows.innerHTML = '';
+  for (let i = 0; i < count; i += 1) {
+    const row = document.createElement('div');
+    row.className = 'team-row';
+    row.innerHTML = `
+      <span class="num">${i + 1}</span>
+      <input type="text" maxlength="24" placeholder="Team ${i + 1}" value="${(names[i] ?? existing[i] ?? '').replace(/"/g, '&quot;')}">
+      <input type="color" value="${COLORS[i % COLORS.length]}">
+    `;
+    teamRows.appendChild(row);
+  }
+}
+
+function readSetup() {
+  const rows = [...teamRows.querySelectorAll('.team-row')];
+  return {
+    title: document.getElementById('title').value.trim(),
+    teams: rows.map((row, index) => ({
+      name: row.querySelector('input[type=text]').value.trim(),
+      color: row.querySelector('input[type=color]').value,
+    })),
+  };
+}
+
+function saveSetup() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(readSetup())); } catch { /* ignore */ }
+}
+
+teamCountEl.addEventListener('change', () => {
+  const count = Math.min(12, Math.max(2, Number(teamCountEl.value) || 4));
+  teamCountEl.value = count;
+  renderRows(count);
+});
+document.getElementById('resetTeams').addEventListener('click', () => renderRows(Number(teamCountEl.value) || 4));
+
+document.getElementById('setup').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const button = document.getElementById('createBtn');
+  const setup = readSetup();
+  button.disabled = true;
+  button.textContent = 'Creating…';
+
+  try {
+    const response = await fetch('api/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(setup),
+    });
+    if (!response.ok) throw new Error('create-failed');
+    const { session, hostKey } = await response.json();
+    saveSetup();
+    showResult(session, hostKey);
+  } catch {
+    button.disabled = false;
+    button.textContent = 'Create room & open host screen →';
+    alert('Could not create the room. Is the server running?');
+  }
+});
+
+function showResult(session, hostKey) {
+  const hostRel = `host.html?session=${encodeURIComponent(session.id)}&key=${encodeURIComponent(hostKey)}`;
+  const hostUrl = new URL(hostRel, location.href).href;
+
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('resultTitle').textContent = session.title;
+  document.getElementById('roomCode').textContent = session.id;
+
+  const openLink = document.getElementById('openHost');
+  openLink.href = hostRel;
+  document.getElementById('hostLinkText').textContent = hostUrl;
+
+  const qr = document.getElementById('hostQr');
+  qr.src = `api/qr?text=${encodeURIComponent(hostUrl)}`;
+  history.replaceState(null, '', `config.html?session=${encodeURIComponent(session.id)}`);
+
+  openLink.focus();
+}
+
+(function restore() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { saved = null; }
+  const teams = Array.isArray(saved?.teams) && saved.teams.length >= 2 ? saved.teams : null;
+  const count = teams ? teams.length : 4;
+  document.getElementById('title').value = saved?.title || '';
+  teamCountEl.value = count;
+  renderRows(count, teams ? teams.map((team) => team.name || '') : []);
+  if (teams) {
+    [...teamRows.querySelectorAll('input[type=color]')].forEach((input, index) => {
+      if (teams[index]?.color) input.value = teams[index].color;
+    });
+  }
+})();
+</script>
+</body>
+</html>

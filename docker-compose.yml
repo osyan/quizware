@@ -1,0 +1,34 @@
+name: quizware
+
+services:
+  quizware:
+    build: .
+    image: quizware:latest
+    container_name: quizware
+    init: true
+    ports:
+      - "${QUIZWARE_PORT:-4000}:4000"
+    environment:
+      PORT: "4000"
+      NODE_ENV: production
+      # Public demo guards. Raise/ignore for a single school event.
+      MAX_SESSIONS: "${MAX_SESSIONS:-500}"
+      CREATE_LIMIT: "${CREATE_LIMIT:-20}"
+      # Set to 1 when running behind Cloudflare / Nginx so limits see real client IPs.
+      TRUST_PROXY: "${TRUST_PROXY:-0}"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

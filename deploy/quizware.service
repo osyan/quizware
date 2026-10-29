@@ -1,0 +1,29 @@
+[Unit]
+Description=QuizWare quiz buzzer server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=quizware
+Group=quizware
+WorkingDirectory=/opt/quizware
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+
+Environment=NODE_ENV=production
+Environment=PORT=4000
+Environment=BIND=0.0.0.0
+# Set to 1 when behind Nginx/Cloudflare so rate limits see real client IPs:
+# Environment=TRUST_PROXY=1
+
+[Install]
+WantedBy=multi-user.target

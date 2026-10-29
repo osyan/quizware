@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0c1322">
+<title>QuizWare Player</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; height:100%; overscroll-behavior:none; }
+  body { font-family:-apple-system,"Segoe UI",Arial,sans-serif; background:#0c1322; color:#eef3ff; user-select:none; -webkit-user-select:none; }
+  .wrap { display:flex; flex-direction:column; height:100%; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+
+  .info { padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; background:#131c2f; border-bottom:1px solid #22304d; }
+  .who { min-width:0; }
+  .who .team { font-size:17px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:56vw; }
+  .who .room { font-size:12px; color:#8fa2c6; }
+  .status { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#8fa2c6; white-space:nowrap; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#3ddc84; box-shadow:0 0 8px #3ddc84; }
+  .dot.off { background:#ff6b6b; box-shadow:0 0 8px #ff6b6b; }
+
+  .stage { flex:1; display:flex; flex-direction:column; padding:14px 14px 10px; gap:12px; min-height:0; }
+  #buzz { flex:1; width:100%; border:none; border-radius:28px; font-size:clamp(30px,11vw,64px); font-weight:900; letter-spacing:2px; color:#101828; cursor:pointer; touch-action:manipulation; transition:transform .06s ease, filter .15s ease; box-shadow:0 18px 40px rgba(0,0,0,.45), inset 0 -6px 0 rgba(0,0,0,.12); }
+  #buzz:active { transform:scale(.985); }
+  #buzz.pending { filter:brightness(.85); }
+  #buzz:disabled { background:#2a3550 !important; color:#7d8db0; box-shadow:none; cursor:not-allowed; }
+  #buzz:disabled:active { transform:none; }
+
+  .state { text-align:center; font-size:16px; color:#b9c7e6; min-height:22px; line-height:1.35; padding:0 6px; }
+  .state.good { color:#7ef0ad; font-weight:700; }
+  .state.bad { color:#ffb2b2; }
+
+  .foot { padding:0 16px 12px; display:flex; justify-content:center; }
+  .linky { background:none; border:none; color:#7d8db0; font-size:12px; text-decoration:underline; cursor:pointer; }
+
+  /* team picker */
+  .picker { display:none; flex-direction:column; gap:12px; padding:18px; }
+  .picker.show { display:flex; }
+  .picker h2 { margin:4px 0 0; font-size:20px; }
+  .picker p { margin:0 0 6px; color:#9fb0d0; font-size:14px; }
+  .team-list { display:grid; gap:10px; }
+  .team-pick { padding:22px 16px; border:none; border-radius:18px; font-size:20px; font-weight:800; color:#101828; cursor:pointer; text-align:center; }
+  .team-pick:active { transform:scale(.99); }
+
+  .center-note { display:none; flex:1; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; padding:24px; }
+  .center-note.show { display:flex; }
+  .center-note h2 { margin:0; font-size:20px; }
+  .center-note p { margin:0; color:#9fb0d0; line-height:1.55; font-size:14px; max-width:340px; }
+  .center-note a { color:#8fb0ff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="info">
+    <div class="who">
+      <div class="team" id="teamName">QuizWare</div>
+      <div class="room">Room <span id="roomCode">------</span></div>
+    </div>
+    <div class="status"><span class="dot off" id="statusDot"></span><span id="statusText">connecting</span></div>
+  </div>
+
+  <div class="picker" id="picker">
+    <h2>Pick your team</h2>
+    <p id="pickerTitle">Choose the team you are playing for.</p>
+    <div class="team-list" id="teamList"></div>
+  </div>
+
+  <div class="center-note" id="note">
+    <h2 id="noteTitle">Waiting…</h2>
+    <p id="noteText"></p>
+  </div>
+
+  <div class="stage" id="stage">
+    <button id="buzz" disabled>BUZZ</button>
+    <div class="state" id="state">Connecting…</div>
+  </div>
+
+  <div class="foot">
+    <button class="linky" id="changeTeam" hidden>Not your team? Change team</button>
+  </div>
+</div>
+
+<script src="socket.io/socket.io.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const sessionId = (params.get('session') || '').trim().toUpperCase();
+let teamId = (params.get('teamId') || '').trim();
+
+const socket = io();
+const btn = document.getElementById('buzz');
+const stateEl = document.getElementById('state');
+const picker = document.getElementById('picker');
+const teamList = document.getElementById('teamList');
+const note = document.getElementById('note');
+const stage = document.getElementById('stage');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const changeTeamBtn = document.getElementById('changeTeam');
+
+let session = null;
+let team = null;
+let pending = false;
+let joining = false;
+
+const STORAGE_KEY = sessionId ? `qw:team:${sessionId}` : null;
+
+function showNote(title, text) {
+  document.getElementById('noteTitle').textContent = title;
+  document.getElementById('noteText').innerHTML = text;
+  note.classList.add('show');
+  stage.style.display = 'none';
+  picker.classList.remove('show');
+}
+
+function setStatus(text, cls = '') {
+  stateEl.textContent = text;
+  stateEl.className = `state ${cls}`;
+}
+
+if (!sessionId) {
+  showNote('Missing room code', 'Open the QR code from the host screen again, or go back to the <a href="index.html">home page</a> and enter the room code.');
+}
+
+/* ---------- team picker ---------- */
+async function loadTeams() {
+  try {
+    const response = await fetch(`api/session/${encodeURIComponent(sessionId)}`);
+    if (!response.ok) throw new Error('not-found');
+    const data = await response.json();
+    renderPicker(data.session);
+  } catch {
+    showNote('Room not found', 'This room may have expired. Scan the QR code on the host screen again.');
+  }
+}
+
+function renderPicker(snapshot) {
+  session = snapshot;
+  document.getElementById('roomCode').textContent = snapshot.id;
+  document.getElementById('pickerTitle').textContent = snapshot.title;
+  teamList.innerHTML = '';
+  snapshot.teams.forEach((item) => {
+    const pick = document.createElement('button');
+    pick.className = 'team-pick';
+    pick.style.backgroundColor = item.color;
+    pick.textContent = item.name;
+    pick.addEventListener('click', () => chooseTeam(item.id));
+    teamList.appendChild(pick);
+  });
+  picker.classList.add('show');
+  stage.style.display = 'none';
+  note.classList.remove('show');
+}
+
+function chooseTeam(id) {
+  teamId = String(id);
+  try { localStorage.setItem(STORAGE_KEY, teamId); } catch { /* ignore */ }
+  picker.classList.remove('show');
+  stage.style.display = 'flex';
+  join();
+}
+
+/* ---------- buzz ---------- */
+function attemptBuzz(event) {
+  if (event) event.preventDefault();
+  if (!team || pending || !session) return;
+  if (session.buzzMuted) { setStatus('Buzz is locked by the host.', 'bad'); return; }
+  if (session.currentWinner) return;
+
+  pending = true;
+  btn.classList.add('pending');
+  btn.disabled = true;
+  setStatus('Sent…');
+  navigator.vibrate?.(30);
+
+  socket.timeout(4000).emit('buzz', {}, (error, result) => {
+    pending = false;
+    btn.classList.remove('pending');
+    if (error) {
+      setStatus('No reply from host — try again.', 'bad');
+      btn.disabled = false;
+      return;
+    }
+    if (result?.ok) {
+      setStatus('You buzzed first! 🎉', 'good');
+      return;
+    }
+    if (result?.reason === 'closed') {
+      setStatus(`${result.winner?.teamName || 'Another team'} was faster.`, 'bad');
+      return;
+    }
+    if (result?.reason === 'muted') {
+      setStatus('Buzz is locked by the host.', 'bad');
+      return;
+    }
+    setStatus('Buzz not accepted.', 'bad');
+    btn.disabled = false;
+  });
+}
+
+btn.addEventListener('pointerdown', attemptBuzz);
+btn.addEventListener('keydown', (event) => { if (event.key === ' ' || event.key === 'Enter') attemptBuzz(event); });
+btn.addEventListener('contextmenu', (event) => event.preventDefault());
+
+/* ---------- rendering ---------- */
+function render() {
+  if (!session || !team) return;
+
+  document.getElementById('teamName').textContent = team.name;
+  document.getElementById('roomCode').textContent = session.id;
+  document.title = `${team.name} · QuizWare`;
+
+  const winner = session.currentWinner;
+
+  if (session.buzzMuted) {
+    btn.style.backgroundColor = team.color;
+    btn.disabled = true;
+    btn.textContent = 'LOCKED';
+    setStatus('Host locked buzzing for this question.', '');
+    return;
+  }
+
+  if (winner) {
+    btn.style.backgroundColor = team.color;
+    btn.disabled = true;
+    const mine = winner.teamId === team.id;
+    btn.textContent = mine ? 'YOU BUZZED' : 'TOO LATE';
+    setStatus(mine ? 'You buzzed first! 🎉' : `${winner.teamName} buzzed first.`, mine ? 'good' : 'bad');
+    return;
+  }
+
+  btn.style.backgroundColor = team.color;
+  btn.textContent = 'BUZZ';
+  if (!pending) {
+    btn.disabled = false;
+    setStatus('Ready — tap when you know the answer.', '');
+  }
+  if (session.playersByTeam && !session.playersByTeam[team.id]) {
+    // keep it simple: never blocks buzzing, just informational
+  }
+}
+
+/* ---------- join ---------- */
+function join() {
+  if (joining || !socket.connected) return; // connect handler will retry
+  joining = true;
+  socket.emit('join', { role: 'player', sessionId, teamId }, (result) => {
+    joining = false;
+    if (!result?.ok) {
+      if (result?.reason === 'bad-team') {
+        try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+        loadTeams();
+      } else {
+        showNote('Cannot join', 'The room may have expired. Scan the QR code on the host screen again.');
+      }
+      return;
+    }
+    team = result.team;
+    btn.style.backgroundColor = team.color;
+    changeTeamBtn.hidden = false;
+    stateEl.textContent = 'Ready';
+  });
+}
+
+/* ---------- socket events ---------- */
+socket.on('connect', () => {
+  statusDot.classList.remove('off');
+  statusText.textContent = 'live';
+  if (!sessionId) return;
+  if (teamId) join();
+  else if (!session) loadTeams();
+});
+
+socket.on('disconnect', () => {
+  statusDot.classList.add('off');
+  statusText.textContent = 'reconnecting';
+  btn.disabled = true;
+});
+
+socket.on('sessionState', (data) => {
+  session = data;
+  if (!team && teamId) team = data.teams.find((item) => item.id === teamId) || null;
+  render();
+});
+
+socket.on('winner', () => render());
+socket.on('reset', () => { pending = false; btn.classList.remove('pending'); render(); });
+
+socket.on('errorMessage', (data) => {
+  setStatus(data?.text || 'Error', 'bad');
+});
+
+changeTeamBtn.addEventListener('click', () => {
+  try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+  location.href = `player.html?session=${encodeURIComponent(sessionId)}`;
+});
+
+/* ---------- boot ---------- */
+if (sessionId) {
+  let saved = null;
+  try { saved = localStorage.getItem(STORAGE_KEY); } catch { saved = null; }
+  if (!teamId && saved) teamId = saved;
+  document.getElementById('roomCode').textContent = sessionId;
+  if (!teamId) {
+    stage.style.display = 'none';
+    loadTeams();
+  }
+}
+</script>
+</body>
+</html>
