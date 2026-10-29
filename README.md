@@ -1,6 +1,6 @@
 # QuizWare
 
-Free browser-based quiz buzzer system by [Systematic Solutions](https://syss.hk).
+Free, open-source browser-based quiz buzzer system.
 
 One laptop runs the **host screen** (projector). It shows teams, scores and a QR code per team.
 Players scan with their phones, get **one big BUZZ button**, and the first buzz that reaches the
@@ -17,13 +17,13 @@ No app install, no dedicated hardware, no database.
 
 ```bash
 docker run -d --name quizware -p 4000:4000 --restart unless-stopped \
-  ghcr.io/OWNER/quizware:latest
+  ghcr.io/osyan/quizware:latest
 ```
 
 or from source:
 
 ```bash
-git clone https://github.com/OWNER/quizware.git
+git clone https://github.com/osyan/quizware.git
 cd quizware
 docker compose up -d --build
 ```
@@ -100,7 +100,7 @@ quizware/
 │   ├── host.html        # host control screen
 │   └── player.html      # player buzz page
 ├── deploy/              # nginx vhosts, systemd unit, install-debian.sh
-├── docs/                # screenshots + about_syss.html (marketing source)
+├── docs/                # screenshots
 ├── test/smoke.js        # end-to-end test (npm test)
 ├── .github/workflows/   # CI (tests + image build) and GHCR publish on tags
 ├── SELFHOST.md          # Docker / VPS / LAN / systemd guide

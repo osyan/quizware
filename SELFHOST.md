@@ -20,7 +20,7 @@ This is the path for `quizware.syss.hk` (or any Debian 12 / Ubuntu 22.04+ box).
 
 ```bash
 sudo apt-get update && sudo apt-get install -y git
-sudo git clone https://github.com/OWNER/quizware.git /opt/quizware
+sudo git clone https://github.com/osyan/quizware.git /opt/quizware
 ```
 
 or copy your working folder from Windows with the built-in OpenSSH client:
@@ -81,7 +81,7 @@ The old config pointed at `192.168.88.123:4000`; the current vhost targets `127.
 
 ```bash
 docker run -d --name quizware -p 4000:4000 --restart unless-stopped \
-  ghcr.io/OWNER/quizware:latest
+  ghcr.io/osyan/quizware:latest
 ```
 
 Open <http://localhost:4000> (or `http://<server-ip>:4000`).
@@ -96,7 +96,7 @@ Supported platforms: `linux/amd64` and `linux/arm64` (Raspberry Pi 4/5, Apple Si
 ## Docker Compose
 
 ```bash
-git clone https://github.com/OWNER/quizware.git
+git clone https://github.com/osyan/quizware.git
 cd quizware
 cp .env.example .env        # optional: change port / demo limits
 docker compose up -d --build
@@ -126,7 +126,7 @@ docker run -d -p 4000:4000 --restart unless-stopped quizware:local
 
    ```bash
    docker run -d --name quizware -p 127.0.0.1:4000:4000 --restart unless-stopped \
-     -e TRUST_PROXY=1 ghcr.io/OWNER/quizware:latest
+     -e TRUST_PROXY=1 ghcr.io/osyan/quizware:latest
    ```
 
 2. **Nginx site** — copy [`deploy/nginx-quizware.syss.hk.conf`](deploy/nginx-quizware.syss.hk.conf)
@@ -175,7 +175,7 @@ Notes:
 
 ```bash
 sudo useradd --system --home /opt/quizware --shell /usr/sbin/nologin quizware
-sudo git clone https://github.com/OWNER/quizware.git /opt/quizware
+sudo git clone https://github.com/osyan/quizware.git /opt/quizware
 cd /opt/quizware
 sudo npm ci --omit=dev
 sudo cp deploy/quizware.service /etc/systemd/system/

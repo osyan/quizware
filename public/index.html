@@ -150,13 +150,13 @@
       <button class="copy" data-copy="dockerCmd" type="button">Copy</button>
       <pre><code id="dockerCmd">docker run -d --name quizware -p 4000:4000 \
   --restart unless-stopped \
-  ghcr.io/OWNER/quizware:latest</code></pre>
+  ghcr.io/osyan/quizware:latest</code></pre>
     </div>
 
     <p class="alt">Or build from source:</p>
     <div class="code small">
       <button class="copy" data-copy="cloneCmd" type="button">Copy</button>
-      <pre><code id="cloneCmd">git clone https://github.com/OWNER/quizware.git
+      <pre><code id="cloneCmd">git clone https://github.com/osyan/quizware.git
 cd quizware
 docker compose up -d --build</code></pre>
     </div>
@@ -166,8 +166,8 @@ docker compose up -d --build</code></pre>
     </p>
 
     <div class="row">
-      <a class="btn" id="repoLink" href="https://github.com/OWNER/quizware" target="_blank" rel="noopener">Get the source on GitHub →</a>
-      <a class="btn ghost" id="guideLink" href="https://github.com/OWNER/quizware/blob/main/SELFHOST.md" target="_blank" rel="noopener">Self-hosting guide</a>
+      <a class="btn" id="repoLink" href="https://github.com/osyan/quizware" target="_blank" rel="noopener">Get the source on GitHub →</a>
+      <a class="btn ghost" id="guideLink" href="https://github.com/osyan/quizware/blob/main/SELFHOST.md" target="_blank" rel="noopener">Self-hosting guide</a>
     </div>
 
     <div class="facts">
@@ -180,41 +180,39 @@ docker compose up -d --build</code></pre>
   <section class="story" id="story">
     <h2>From USB buzzers to the browser</h2>
     <p>
-      In 2006 our founder built the first USB quiz buzzer prototype for training sessions, a
-      university astronomy quiz and church Bible quizzes. The projected "who buzzed first"
-      display got such a reaction that <strong>Systematic Solutions</strong> was founded in 2009 to
-      make it a real product — it became the standard quiz buzzer in Hong Kong schools, with
-      hundreds of units in service.
+      In 2006 the first USB quiz buzzer prototype was built for training sessions, a university
+      astronomy quiz and church Bible quizzes. The projected "who buzzed first" display got such
+      a reaction that it became a real product — for years it was the standard quiz buzzer in
+      Hong Kong schools, with hundreds of units in service.
     </p>
     <p>
-      Phones changed the classroom, so we out-innovated our own hardware: QuizWare brings that
-      same instant buzz to any device with a browser, and it is free for schools, trainers and
-      communities. The USB buzzer is no longer produced, but every existing customer is still
-      supported.
+      Phones changed the classroom, so QuizWare brings that same instant buzz to any device with
+      a browser — free for schools, trainers and communities. No hardware to plug in, no
+      dedicated server in the room.
     </p>
-    <a href="https://syss.hk" target="_blank" rel="noopener">Read the full story at syss.hk →</a>
+    <a href="https://quizware.syss.hk" target="_blank" rel="noopener">Try the live demo →</a>
   </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <div>QuizWare by <a href="https://syss.hk" target="_blank" rel="noopener">Systematic Solutions</a>, Hong Kong · MIT licensed</div>
+    <div>QuizWare · free &amp; open source · MIT licensed</div>
     <nav>
       <a href="https://quizware.syss.hk" target="_blank" rel="noopener">Live demo</a>
-      <a href="https://github.com/OWNER/quizware" target="_blank" rel="noopener">GitHub</a>
-      <a id="footerGuide" href="https://github.com/OWNER/quizware/blob/main/SELFHOST.md" target="_blank" rel="noopener">Self-hosting</a>
-      <a href="https://github.com/OWNER/quizware/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
+      <a href="https://github.com/osyan/quizware" target="_blank" rel="noopener">GitHub</a>
+      <a id="footerGuide" href="https://github.com/osyan/quizware/blob/main/SELFHOST.md" target="_blank" rel="noopener">Self-hosting</a>
+      <a href="https://github.com/osyan/quizware/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
     </nav>
   </div>
 </footer>
 
 <script>
 /* ------------------------------------------------------------------
- * Change OWNER once, after the GitHub repo exists.
+ * Change osyan once, after the GitHub repo exists.
  * Demo + docs links are derived from these two constants.
  * ------------------------------------------------------------------ */
-const REPO_URL = 'https://github.com/OWNER/quizware';
-const IMAGE = 'ghcr.io/OWNER/quizware:latest';
+const REPO_URL = 'https://github.com/osyan/quizware';
+const IMAGE = 'ghcr.io/osyan/quizware:latest';
 
 (function applyLinks() {
   const dockerCmd = document.getElementById('dockerCmd');

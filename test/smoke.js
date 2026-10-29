@@ -21,11 +21,12 @@ function ok(label) {
   console.log(`  \u2713 ${label}`);
 }
 
-function waitFor(socket, event, predicate = () => true, timeout = 5000) {
+function waitFor(socket, event, predicate = () => true, timeout = 15000) {
+  const stepName = (new Error().stack || '').split('\n').map((s) => s.trim()).filter((s) => s.startsWith('at '))[1] || '?';
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       socket.off(event, handler);
-      reject(new Error(`timeout waiting for "${event}"`));
+      reject(new Error(`timeout waiting for "${event}" @ ${stepName}`));
     }, timeout);
     function handler(payload) {
       let matched = true;

@@ -7,7 +7,7 @@
 # Usage:
 #   sudo bash deploy/install-debian.sh                      # plain install on port 4000
 #   sudo bash deploy/install-debian.sh --domain quizware.syss.hk
-#   sudo bash deploy/install-debian.sh --port 8080 --image ghcr.io/OWNER/quizware:latest
+#   sudo bash deploy/install-debian.sh --port 8080 --image ghcr.io/osyan/quizware:latest
 #
 set -euo pipefail
 
