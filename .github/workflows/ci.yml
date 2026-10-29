@@ -16,7 +16,25 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Run smoke test (starts the server itself)
+      - name: Start server in background
+        run: |
+          node server.js > server.log 2>&1 &
+          echo "server started"
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4000/api/health > /dev/null; then
+              echo "server is healthy"
+              break
+            fi
+            if [ "$i" = "30" ]; then
+              echo "server did not become healthy" >&2
+              cat server.log >&2 || true
+              exit 1
+            fi
+            sleep 1
+          done
+      - name: Run smoke test
         run: npm test
 
   image:
